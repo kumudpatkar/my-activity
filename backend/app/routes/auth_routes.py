@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
+
 from app.models.user_model import UserRegister
 from app.database import db
+
 from app.utils.security import (
     hash_password,
     verify_password,
@@ -15,9 +17,9 @@ router = APIRouter()
 @router.post("/register")
 def register_user(user: UserRegister):
 
-    # Check if user already exists
+    # Check existing user
     existing_user = db.users.find_one({
-        "email": user.email
+        "email": str(user.email)
     })
 
     if existing_user:
@@ -29,7 +31,7 @@ def register_user(user: UserRegister):
     # Hash password
     hashed_password = hash_password(user.password)
 
-    # Create new user object
+    # Create user data
     new_user = {
         "name": user.name,
         "email": str(user.email),
@@ -37,7 +39,7 @@ def register_user(user: UserRegister):
         "role": user.role
     }
 
-    # Insert into MongoDB
+    # Insert into DB
     db.users.insert_one(new_user)
 
     return {
@@ -49,23 +51,32 @@ def register_user(user: UserRegister):
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
-    # Find user by email
+    # Find user
     user = db.users.find_one({
         "email": form_data.username
     })
 
-    # User not found
+    # Email not found
     if not user:
         raise HTTPException(
             status_code=401,
             detail="Invalid Email"
         )
 
+    # Debug print
+    print("Entered Password:", form_data.password)
+    print("Stored Hash:", user["password"])
+
     # Verify password
-    if not verify_password(
+    is_password_correct = verify_password(
         form_data.password,
         user["password"]
-    ):
+    )
+
+    print("Password Match:", is_password_correct)
+
+    # Wrong password
+    if not is_password_correct:
         raise HTTPException(
             status_code=401,
             detail="Invalid Password"
@@ -79,6 +90,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         }
     )
 
+    # Success response
     return {
         "access_token": access_token,
         "token_type": "bearer",
