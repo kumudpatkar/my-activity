@@ -1,13 +1,11 @@
 from fastapi import APIRouter, Depends
-from fastapi.security import OAuth2PasswordBearer
+from app.utils.auth_middleware import verify_token
 
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
 @router.get("/profile")
-def profile(token: str = Depends(oauth2_scheme)):
+def profile(user_email: str = Depends(verify_token)):
     return {
         "message": "Profile access granted",
-        "token_received": token
+        "logged_in_user": user_email
     }
