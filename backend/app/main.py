@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.database import db
 
 from app.routes.auth_routes import router as auth_router
@@ -10,24 +12,32 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Register routes
+# ================= CORS FIX (IMPORTANT) =================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # for development (React localhost)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ================= ROUTES =================
 app.include_router(auth_router)
 app.include_router(login_router)
 app.include_router(protected_router)
 
+# ================= BASIC ROUTES =================
 @app.get("/")
 def home():
     return {
         "message": "Smart Job Portal API Running 🚀"
     }
 
-
 @app.get("/health")
 def health_check():
     return {
         "status": "OK"
     }
-
 
 @app.get("/test-db")
 def test_db():
