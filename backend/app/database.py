@@ -1,15 +1,14 @@
 from pymongo import MongoClient
-from dotenv import load_dotenv
-import os
 
-# Load environment variables
-load_dotenv()
+# ================= MONGODB CONNECTION =================
+MONGO_URL = "mongodb://localhost:27017"
 
-# MongoDB URL
-MONGO_URL = os.getenv("MONGO_URL")
-
-# Connect MongoDB
 client = MongoClient(MONGO_URL)
 
-# Database Name
+# ================= DATABASE =================
 db = client["smart_job_portal"]
+
+# ================= COLLECTIONS =================
+users_collection = db["users"]
+
+profile_collection = db["profiles"]

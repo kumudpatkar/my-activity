@@ -1,20 +1,48 @@
-from fastapi import APIRouter, Depends
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from passlib.hash import bcrypt
+
+from app.database import db
+from app.auth_utils import create_access_token
 
 router = APIRouter()
 
-@router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    email = form_data.username   # Swagger sends username → treat as email
-    password = form_data.password
+users_collection = db["users"]
 
-    # TEMP TEST (replace with DB check later)
-    if email == "kumud@gmail.com" and password == "123456":
-        return {
-            "access_token": "test_jwt_token",
-            "token_type": "bearer"
-        }
+
+class LoginData(BaseModel):
+    email: str
+    password: str
+
+
+@router.post("/login")
+def login(data: LoginData):
+
+    user = users_collection.find_one({
+        "email": data.email
+    })
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email"
+        )
+
+    if not bcrypt.verify(
+        data.password,
+        user["password"]
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid password"
+        )
+
+    token = create_access_token({
+        "sub": data.email
+    })
 
     return {
-        "error": "Invalid credentials"
+        "access_token": token,
+        "token_type": "bearer",
+        "message": "Login successful 🚀"
     }
