@@ -22,47 +22,34 @@ function Login() {
     try {
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/auth/login",
-        {
-          email: formData.email,
-          password: formData.password
-        }
+        "http://127.0.0.1:8000/login",
+        formData
       );
 
-      console.log("LOGIN SUCCESS:", response.data);
+      console.log(response.data);
 
       // SAVE TOKEN
-      localStorage.setItem(
-        "token",
-        response.data.access_token
-      );
+      localStorage.setItem("token", response.data.access_token);
 
-      alert("Login Successful 🚀");
+      alert("Login Success ✅");
 
-      // REDIRECT
-      window.location.href = "/dashboard";
+      window.location.href = "/jobs";
 
     } catch (error) {
 
-      console.log(
-        "LOGIN ERROR:",
-        error.response?.data || error.message
-      );
+      console.log(error.response?.data);
 
       alert("Login Failed ❌");
-
     }
   };
 
   return (
 
-    <div
-      style={{
-        width: "400px",
-        margin: "100px auto",
-        textAlign: "center"
-      }}
-    >
+    <div style={{
+      width: "400px",
+      margin: "100px auto",
+      textAlign: "center"
+    }}>
 
       <h1>Login 🔐</h1>
 
@@ -72,7 +59,6 @@ function Login() {
           type="email"
           name="email"
           placeholder="Enter Email"
-          value={formData.email}
           onChange={handleChange}
           required
         />
@@ -83,7 +69,6 @@ function Login() {
           type="password"
           name="password"
           placeholder="Enter Password"
-          value={formData.password}
           onChange={handleChange}
           required
         />
@@ -97,7 +82,6 @@ function Login() {
       </form>
 
     </div>
-
   );
 }
 

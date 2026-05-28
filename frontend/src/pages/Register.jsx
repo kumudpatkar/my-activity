@@ -20,7 +20,7 @@ function Register() {
 
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/auth/register",
+        "http://127.0.0.1:8000/register",
         {
           email: formData.email,
           password: formData.password
@@ -28,7 +28,7 @@ function Register() {
       );
 
       console.log("SUCCESS:", response.data);
-      alert(response.data.message);
+      alert(response.data?.message || "Success");
 
     } catch (error) {
       console.log("ERROR:", error.response?.data || error.message);

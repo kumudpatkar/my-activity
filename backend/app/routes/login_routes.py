@@ -1,19 +1,9 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from passlib.hash import bcrypt
-
-from app.database import db
-from app.auth_utils import create_access_token
+from fastapi import APIRouter
+from app.database import users_collection
+from app.models.user_model import LoginData
+from app.utils.jwt_handler import create_access_token
 
 router = APIRouter()
-
-users_collection = db["users"]
-
-
-class LoginData(BaseModel):
-    email: str
-    password: str
-
 
 @router.post("/login")
 def login(data: LoginData):
@@ -23,19 +13,15 @@ def login(data: LoginData):
     })
 
     if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email"
-        )
+        return {
+            "message": "User not found ❌"
+        }
 
-    if not bcrypt.verify(
-        data.password,
-        user["password"]
-    ):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid password"
-        )
+    # SIMPLE PASSWORD CHECK
+    if data.password != user["password"]:
+        return {
+            "message": "Wrong password ❌"
+        }
 
     token = create_access_token({
         "sub": data.email
@@ -44,5 +30,5 @@ def login(data: LoginData):
     return {
         "access_token": token,
         "token_type": "bearer",
-        "message": "Login successful 🚀"
+        "message": "Login successful ✅"
     }
