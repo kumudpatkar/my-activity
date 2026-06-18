@@ -1,15 +1,18 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 from app.database import users_collection
-from app.models.user_model import LoginData
 from app.utils.jwt_handler import create_access_token
+from passlib.hash import bcrypt
 
 router = APIRouter()
 
-@router.post("/login")
-def login(data: LoginData):
 
+@router.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+
+    # Find user
     user = users_collection.find_one({
-        "email": data.email
+        "email": form_data.username
     })
 
     if not user:
@@ -17,14 +20,18 @@ def login(data: LoginData):
             "message": "User not found ❌"
         }
 
-    # SIMPLE PASSWORD CHECK
-    if data.password != user["password"]:
+    # Verify password
+    if not bcrypt.verify(
+        form_data.password,
+        user["password"]
+    ):
         return {
             "message": "Wrong password ❌"
         }
 
+    # Create JWT
     token = create_access_token({
-        "sub": data.email
+        "sub": user["email"]
     })
 
     return {

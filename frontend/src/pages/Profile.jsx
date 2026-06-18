@@ -1,294 +1,334 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../services/api";
 
 function Profile() {
 
-  // ================= FORM STATE =================
-  const [formData, setFormData] = useState({
-    email: "",
-    name: "",
-    skills: "",
-    college: "",
-    experience: "",
-    linkedin: "",
-    github: "",
-    resume: "",
-    profile_photo: ""
-  });
+    const [profile, setProfile] = useState({
+        name: "",
+        email: localStorage.getItem("userEmail") || "",
+        skills: "",
+        college: "",
+        experience: "",
+        linkedin: "",
+        github: "",
+        resume: "",
+        profile_photo: ""
+    });
 
-  // ================= RESUME FILE STATE =================
-  const [resumeFile, setResumeFile] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-  // ================= FETCH PROFILE =================
-  useEffect(() => {
+    const [resumeFile, setResumeFile] = useState(null);
+    const [photoFile, setPhotoFile] = useState(null);
+
+    // ================= FETCH PROFILE =================
 
     const fetchProfile = async () => {
 
-      try {
+        try {
 
-        const email = prompt("Enter your registered email");
+            setLoading(true);
 
-        if (!email) return;
+            const res = await API.get("/api/profile");
 
-        const response = await axios.get(
-          `http://127.0.0.1:8000/api/get-profile/${email}`
-        );
+            setProfile({
+                name: res.data.name || "",
+                email: res.data.email || "",
+                skills: res.data.skills || "",
+                college: res.data.college || "",
+                experience: res.data.experience || "",
+                linkedin: res.data.linkedin || "",
+                github: res.data.github || "",
+                resume: res.data.resume || "",
+                profile_photo: res.data.profile_photo || ""
+            });
 
-        // If profile exists
-        if (!response.data.message) {
+        } catch (err) {
 
-          setFormData(response.data);
+            console.log(err);
 
-        } else {
+        } finally {
 
-          // If no profile found
-          setFormData((prev) => ({
-            ...prev,
-            email: email
-          }));
+            setLoading(false);
+
         }
-
-      } catch (error) {
-
-        console.log("FETCH PROFILE ERROR:", error);
-
-      }
     };
 
-    fetchProfile();
+    useEffect(() => {
+        fetchProfile();
+    }, []);
 
-  }, []);
+    // ================= HANDLE INPUT =================
 
-  // ================= HANDLE INPUT CHANGE =================
-  const handleChange = (e) => {
+    const handleChange = (e) => {
 
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+        setProfile({
+            ...profile,
+            [e.target.name]: e.target.value
+        });
 
-  // ================= HANDLE FILE CHANGE =================
-  const handleFileChange = (e) => {
+    };
 
-    setResumeFile(e.target.files[0]);
-  };
+    // ================= SAVE PROFILE =================
 
-  // ================= HANDLE SUBMIT =================
-  const handleSubmit = async (e) => {
+    const saveProfile = async () => {
 
-    e.preventDefault();
+        try {
 
-    try {
+            const res = await API.post(
+                "/api/save-profile",
+                profile
+            );
 
-      let uploadedResumePath = formData.resume;
+            alert(res.data.message);
 
-      // ================= UPLOAD RESUME =================
-      if (resumeFile) {
+        } catch (err) {
 
-        const fileData = new FormData();
+            console.log(err);
 
-        fileData.append("file", resumeFile);
+            alert("Save Failed");
 
-        const uploadResponse = await axios.post(
-          "http://127.0.0.1:8000/api/upload-resume",
-          fileData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data"
+        }
+
+    };
+
+    // ================= UPLOAD RESUME =================
+
+    const uploadResume = async () => {
+
+        if (!resumeFile) {
+            alert("Select Resume PDF");
+            return;
+        }
+
+        try {
+
+            const formData = new FormData();
+
+            formData.append(
+                "file",
+                resumeFile
+            );
+
+            const res = await API.post(
+                "/api/upload-resume",
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data"
+                    }
+                }
+            );
+
+            setProfile({
+                ...profile,
+                resume: res.data.resume
+            });
+
+            alert("Resume Uploaded");
+
+        } catch (err) {
+
+            console.log(err);
+
+            alert("Resume Upload Failed");
+
+        }
+
+    };
+
+    // ================= UPLOAD PHOTO =================
+
+    const uploadPhoto = async () => {
+
+        if (!photoFile) {
+            alert("Select Profile Photo");
+            return;
+        }
+
+        try {
+
+            const formData = new FormData();
+
+            formData.append(
+                "file",
+                photoFile
+            );
+
+            const res = await API.post(
+                "/api/upload-photo",
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data"
+                    }
+                }
+            );
+
+            setProfile({
+                ...profile,
+                profile_photo: res.data.profile_photo
+            });
+
+            alert("Photo Uploaded");
+
+        } catch (err) {
+
+            console.log(err);
+
+            alert("Photo Upload Failed");
+
+        }
+
+    };
+
+    return (
+
+        <div style={{ padding: "20px" }}>
+
+            <h1>My Profile</h1>
+
+            {loading && <p>Loading...</p>}
+
+            <input
+                type="text"
+                name="name"
+                placeholder="Name"
+                value={profile.name}
+                onChange={handleChange}
+            />
+
+            <br /><br />
+
+            <input
+                type="text"
+                name="email"
+                placeholder="Email"
+                value={profile.email}
+                onChange={handleChange}
+            />
+
+            <br /><br />
+
+            <input
+                type="text"
+                name="skills"
+                placeholder="Skills"
+                value={profile.skills}
+                onChange={handleChange}
+            />
+
+            <br /><br />
+
+            <input
+                type="text"
+                name="college"
+                placeholder="College"
+                value={profile.college}
+                onChange={handleChange}
+            />
+
+            <br /><br />
+
+            <input
+                type="text"
+                name="experience"
+                placeholder="Experience"
+                value={profile.experience}
+                onChange={handleChange}
+            />
+
+            <br /><br />
+
+            <input
+                type="text"
+                name="linkedin"
+                placeholder="LinkedIn"
+                value={profile.linkedin}
+                onChange={handleChange}
+            />
+
+            <br /><br />
+
+            <input
+                type="text"
+                name="github"
+                placeholder="GitHub"
+                value={profile.github}
+                onChange={handleChange}
+            />
+
+            <br /><br />
+
+            <hr />
+
+            <h3>Upload Resume PDF</h3>
+
+            <input
+                type="file"
+                accept=".pdf"
+                onChange={(e) =>
+                    setResumeFile(e.target.files[0])
+                }
+            />
+
+            <br /><br />
+
+            <button onClick={uploadResume}>
+                Upload Resume
+            </button>
+
+            <br /><br />
+
+            {
+                profile.resume &&
+                <a
+                    href={`http://127.0.0.1:8000/${profile.resume}`}
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    <button>
+                        View Resume
+                    </button>
+                </a>
             }
-          }
-        );
 
-        uploadedResumePath = uploadResponse.data.path;
-      }
+            <hr />
 
-      // ================= SAVE PROFILE =================
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/save-profile",
-        {
-          ...formData,
-          resume: uploadedResumePath
-        }
-      );
+            <h3>Upload Profile Photo</h3>
 
-      alert(response.data.message);
+            <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                    setPhotoFile(e.target.files[0])
+                }
+            />
 
-    } catch (error) {
+            <br /><br />
 
-      console.log("PROFILE SAVE ERROR:", error);
+            <button onClick={uploadPhoto}>
+                Upload Photo
+            </button>
 
-      alert("Profile Save Failed ❌");
-    }
-  };
+            <br /><br />
 
-  return (
+            {
+                profile.profile_photo &&
+                <img
+                    src={`http://127.0.0.1:8000/${profile.profile_photo}`}
+                    alt="Profile"
+                    width="150"
+                />
+            }
 
-    <div
-      style={{
-        width: "500px",
-        margin: "50px auto",
-        padding: "20px",
-        border: "1px solid #ccc",
-        borderRadius: "10px"
-      }}
-    >
+            <br /><br />
 
-      <h1>Profile 👤</h1>
+            <button onClick={saveProfile}>
+                Save Profile
+            </button>
 
-      <form onSubmit={handleSubmit}>
-
-        {/* EMAIL */}
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          style={{ width: "100%", padding: "10px" }}
-        />
-
-        <br /><br />
-
-        {/* NAME */}
-        <input
-          type="text"
-          name="name"
-          placeholder="Full Name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-          style={{ width: "100%", padding: "10px" }}
-        />
-
-        <br /><br />
-
-        {/* SKILLS */}
-        <input
-          type="text"
-          name="skills"
-          placeholder="Skills"
-          value={formData.skills}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "10px" }}
-        />
-
-        <br /><br />
-
-        {/* COLLEGE */}
-        <input
-          type="text"
-          name="college"
-          placeholder="College"
-          value={formData.college}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "10px" }}
-        />
-
-        <br /><br />
-
-        {/* EXPERIENCE */}
-        <input
-          type="text"
-          name="experience"
-          placeholder="Experience"
-          value={formData.experience}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "10px" }}
-        />
-
-        <br /><br />
-
-        {/* LINKEDIN */}
-        <input
-          type="text"
-          name="linkedin"
-          placeholder="LinkedIn URL"
-          value={formData.linkedin}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "10px" }}
-        />
-
-        <br /><br />
-
-        {/* GITHUB */}
-        <input
-          type="text"
-          name="github"
-          placeholder="GitHub URL"
-          value={formData.github}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "10px" }}
-        />
-
-        <br /><br />
-
-        {/* PROFILE PHOTO */}
-        <input
-          type="text"
-          name="profile_photo"
-          placeholder="Profile Photo URL"
-          value={formData.profile_photo}
-          onChange={handleChange}
-          style={{ width: "100%", padding: "10px" }}
-        />
-
-        <br /><br />
-
-        {/* RESUME FILE */}
-        <label>
-          Upload Resume PDF/DOCX:
-        </label>
-
-        <br /><br />
-
-        <input
-          type="file"
-          accept=".pdf,.doc,.docx"
-          onChange={handleFileChange}
-        />
-
-        <br /><br />
-
-        {/* SHOW CURRENT RESUME */}
-        {
-          formData.resume && (
-            <div>
-
-              <p>
-                Current Resume:
-              </p>
-
-              <a
-                href={`http://127.0.0.1:8000/${formData.resume}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                View Resume
-              </a>
-
-            </div>
-          )
-        }
-
-        <br />
-
-        {/* SAVE BUTTON */}
-        <button
-          type="submit"
-          style={{
-            padding: "10px 20px",
-            cursor: "pointer"
-          }}
-        >
-          Save / Update Profile
-        </button>
-
-      </form>
-
-    </div>
-  );
+        </div>
+    );
 }
 
 export default Profile;

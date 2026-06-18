@@ -1,0 +1,53 @@
+from fastapi import APIRouter
+from pydantic import BaseModel
+from reportlab.pdfgen import canvas
+import os
+
+router = APIRouter()
+
+
+class CoverLetterRequest(BaseModel):
+    name: str
+    role: str
+    company: str
+    skills: str
+
+
+@router.post("/generate-cover-letter")
+def generate_cover_letter(data: CoverLetterRequest):
+
+    text = f"""
+Dear Hiring Manager,
+
+I am excited to apply for the {data.role} position at {data.company}.
+
+My skills include:
+{data.skills}
+
+I believe I can contribute effectively to your organization.
+
+Thank you for your time.
+
+Sincerely,
+{data.name}
+"""
+
+    file_path = f"uploads/cover_letters/{data.name}_cover_letter.pdf"
+
+    os.makedirs("uploads/cover_letters", exist_ok=True)
+
+    pdf = canvas.Canvas(file_path)
+    pdf.setFont("Helvetica", 12)
+
+    y = 800
+
+    for line in text.split("\n"):
+        pdf.drawString(50, y, line)
+        y -= 20
+
+    pdf.save()
+
+    return {
+        "cover_letter": text,
+        "pdf_url": file_path
+    }

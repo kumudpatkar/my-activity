@@ -1,86 +1,57 @@
 import { useState } from "react";
-import axios from "axios";
+import API from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: ""
-  });
+  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleLogin = async () => {
+  try {
+    const formData = new URLSearchParams();
 
-  const handleSubmit = async (e) => {
+    formData.append("username", email);
+    formData.append("password", password);
 
-    e.preventDefault();
+    const res = await API.post(
+      "/login",
+      formData,
+      {
+        headers: {
+          "Content-Type":
+            "application/x-www-form-urlencoded",
+        },
+      }
+    );
 
-    try {
+    localStorage.setItem("token", res.data.access_token);
+localStorage.setItem("userEmail", email);
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/login",
-        formData
-      );
+    navigate("/dashboard");
 
-      console.log(response.data);
-
-      // SAVE TOKEN
-      localStorage.setItem("token", response.data.access_token);
-
-      alert("Login Success ✅");
-
-      window.location.href = "/jobs";
-
-    } catch (error) {
-
-      console.log(error.response?.data);
-
-      alert("Login Failed ❌");
-    }
-  };
-
+  } catch (err) {
+    console.log(err.response?.data);
+    alert("Login Failed");
+  }
+};
   return (
+    <div>
+      <h1>Login</h1>
 
-    <div style={{
-      width: "400px",
-      margin: "100px auto",
-      textAlign: "center"
-    }}>
+      <input
+        placeholder="Email"
+        onChange={(e) => setEmail(e.target.value)}
+      />
 
-      <h1>Login 🔐</h1>
+      <input
+        placeholder="Password"
+        type="password"
+        onChange={(e) => setPassword(e.target.value)}
+      />
 
-      <form onSubmit={handleSubmit}>
-
-        <input
-          type="email"
-          name="email"
-          placeholder="Enter Email"
-          onChange={handleChange}
-          required
-        />
-
-        <br /><br />
-
-        <input
-          type="password"
-          name="password"
-          placeholder="Enter Password"
-          onChange={handleChange}
-          required
-        />
-
-        <br /><br />
-
-        <button type="submit">
-          Login
-        </button>
-
-      </form>
-
+      <button onClick={handleLogin}>Login</button>
     </div>
   );
 }

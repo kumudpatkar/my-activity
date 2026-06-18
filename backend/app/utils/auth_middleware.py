@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"
+ALGORITHM = os.getenv("ALGORITHM")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -17,7 +17,7 @@ def verify_token(token: str = Depends(oauth2_scheme)):
 
         email = payload.get("sub")
 
-        if email is None:
+        if not email:
             raise HTTPException(status_code=401, detail="Invalid token")
 
         return email

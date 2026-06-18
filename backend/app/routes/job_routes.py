@@ -1,10 +1,13 @@
 from fastapi import APIRouter
+from bson import ObjectId
+
 from app.models.job_model import Job
 from app.database import job_collection
 
 router = APIRouter()
 
-# CREATE JOB
+
+# POST JOB
 @router.post("/post-job")
 async def post_job(job: Job):
 
@@ -23,11 +26,33 @@ async def post_job(job: Job):
         "message": "Job posted successfully 🚀"
     }
 
+
 # GET ALL JOBS
-@router.get("/api/jobs")
+@router.get("/jobs")
 def get_jobs():
+
     jobs = job_collection.find()
+
     return [
-        {**job, "_id": str(job["_id"])}
+        {
+            **job,
+            "_id": str(job["_id"])
+        }
+
         for job in jobs
     ]
+
+
+# DELETE JOB
+@router.delete("/delete-job/{job_id}")
+def delete_job(job_id: str):
+
+    job_collection.delete_one(
+        {
+            "_id": ObjectId(job_id)
+        }
+    )
+
+    return {
+        "message": "Job deleted successfully"
+    }
